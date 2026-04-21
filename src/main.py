@@ -2,6 +2,7 @@ import os
 import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
+from PIL import Image, ImageTk
 from docx import Document
 import csv
 import zipfile
@@ -10,46 +11,46 @@ import xml.etree.ElementTree as ET
 
 # ── Theme definitions ─────────────────────────────────────────────────────────
 THEMES = {
-    "dark": {
-        "BG":          "#0f1117",
-        "PANEL":       "#181c27",
-        "BORDER":      "#252a3a",
-        "ENTRY_BG":    "#1e2333",
-        "ENTRY_FG":    "#c9d1e0",
-        "TEXT":        "#e2e8f0",
-        "MUTED":       "#64748b",
-        "TOPBAR":      "#181c27",
-        "CARD_TITLE":  "#64748b",
-        "HINT_FG":     "#475569",
-        "toggle_icon": "☀  Light Mode",
-    },
     "light": {
-        "BG":          "#f1f5f9",
+        "BG":          "#f8fafc",
         "PANEL":       "#ffffff",
-        "BORDER":      "#cbd5e1",
-        "ENTRY_BG":    "#f8fafc",
+        "BORDER":      "#e2e8f0",
+        "ENTRY_BG":    "#ffffff",
         "ENTRY_FG":    "#1e293b",
         "TEXT":        "#0f172a",
         "MUTED":       "#64748b",
         "TOPBAR":      "#ffffff",
-        "CARD_TITLE":  "#94a3b8",
+        "CARD_TITLE":  "#475569",
         "HINT_FG":     "#94a3b8",
         "toggle_icon": "🌙  Dark Mode",
     },
+    "dark": {
+        "BG":          "#0f172a",
+        "PANEL":       "#1e293b",
+        "BORDER":      "#334155",
+        "ENTRY_BG":    "#0f172a",
+        "ENTRY_FG":    "#f1f5f9",
+        "TEXT":        "#f8fafc",
+        "MUTED":       "#94a3b8",
+        "TOPBAR":      "#1e293b",
+        "CARD_TITLE":  "#cbd5e1",
+        "HINT_FG":     "#475569",
+        "toggle_icon": "☀  Light Mode",
+    },
 }
 
-ACCENT  = "#4f8ef7"
-ACCENT2 = "#7c3aed"
-TEAL    = "#0d9488"
-SUCCESS = "#22c55e"
-DANGER  = "#ef4444"
-WARNING = "#f59e0b"
+ACCENT  = "#3b82f6"  # Modern Blue
+ACCENT2 = "#8b5cf6"  # Modern Violet
+TEAL    = "#14b8a6"  # Modern Teal
+SUCCESS = "#10b981"  # Modern Emerald
+DANGER  = "#ef4444"  # Modern Red
+WARNING = "#f59e0b"  # Modern Amber
 
-FONT_SUB    = ("Helvetica Neue", 10, "bold")
-FONT_BODY   = ("Helvetica Neue", 9)
-FONT_MONO   = ("Menlo", 10)
-FONT_MONO_S = ("Menlo", 9)
-FONT_LABEL  = ("Helvetica Neue", 8, "bold")
+FONT_SUB    = ("Segoe UI", 10, "bold")
+FONT_BODY   = ("Segoe UI", 10)
+FONT_MONO   = ("Consolas", 10)
+FONT_MONO_S = ("Consolas", 9)
+FONT_LABEL  = ("Segoe UI", 9, "bold")
 
 
 def _lighten(hex_color, amount=28):
@@ -75,8 +76,8 @@ class IDGeneratorApp:
         self.root.minsize(900, 600)
         self.root.resizable(True, True)
 
-        self._theme_name = "dark"
-        self._T = THEMES["dark"]
+        self._theme_name = "light"
+        self._T = THEMES["light"]
         self._themed_widgets = []
         self._themed_buttons = []
 
@@ -172,7 +173,7 @@ class IDGeneratorApp:
             parent, text=text, command=command,
             bg=color, fg="#ffffff",
             activebackground=_lighten(color), activeforeground="#ffffff",
-            font=FONT_SUB, padx=14, pady=6,
+            font=FONT_SUB, padx=16, pady=8,
             relief="flat", bd=0, cursor="hand2",
         )
         def _on(e):  btn.config(bg=_lighten(color))
@@ -204,13 +205,14 @@ class IDGeneratorApp:
             highlightthickness=1, highlightbackground=T["BORDER"],
             relief="flat", bd=0, font=FONT_MONO, cursor="hand2",
             indicatoron=True,
+            padx=10, pady=4
         )
         om["menu"].config(
             bg=T["ENTRY_BG"], fg=T["ENTRY_FG"],
             activebackground=ACCENT, activeforeground="#fff",
             font=FONT_MONO, relief="flat", bd=0,
         )
-        self._themed_buttons.append((om, T["ENTRY_BG"]))  # re-theme bg on toggle
+        self._themed_buttons.append((om, T["ENTRY_BG"]))
         return om
 
     def _make_scrolled(self, parent, height=8, width=20):
@@ -223,6 +225,7 @@ class IDGeneratorApp:
             highlightthickness=1, highlightcolor=ACCENT,
             highlightbackground=T["BORDER"],
             selectbackground=ACCENT, selectforeground="#fff",
+            padx=10, pady=10
         )
         self._reg(box, "scrolled")
         return box
@@ -231,13 +234,13 @@ class IDGeneratorApp:
         T = self._T
         outer = tk.Frame(parent, bg=T["BORDER"], bd=0)
         self._reg(outer, "border")
-        inner = tk.Frame(outer, bg=T["PANEL"], padx=16, pady=14)
+        inner = tk.Frame(outer, bg=T["PANEL"], padx=20, pady=18)
         self._reg(inner, "panel")
         inner.pack(fill="both", expand=True, padx=1, pady=1)
         if title:
             lbl = tk.Label(inner, text=title, bg=T["PANEL"], fg=T["CARD_TITLE"],
                            font=FONT_LABEL, anchor="w")
-            lbl.pack(fill="x", pady=(0, 10))
+            lbl.pack(fill="x", pady=(0, 14))
             self._reg(lbl, "card_title")
         return outer, inner
 
@@ -253,20 +256,31 @@ class IDGeneratorApp:
         T = self._T
 
         # Topbar
-        topbar = tk.Frame(self.root, bg=T["TOPBAR"], height=58)
+        topbar = tk.Frame(self.root, bg=T["TOPBAR"], height=70)
         self._reg(topbar, "topbar")
         topbar.pack(fill="x", side="top")
         topbar.pack_propagate(False)
 
-        tk.Frame(topbar, bg=ACCENT, width=4).pack(side="left", fill="y")
+        tk.Frame(topbar, bg=ACCENT, width=5).pack(side="left", fill="y")
 
-        title_lbl = tk.Label(topbar, text="⬡  ID Generator",
+        # Logo
+        try:
+            logo_path = os.path.join(os.path.dirname(__file__), "logo.png")
+            img = Image.open(logo_path)
+            img = img.resize((45, 45), Image.Resampling.LANCZOS)
+            self.logo_img = ImageTk.PhotoImage(img)
+            logo_lbl = tk.Label(topbar, image=self.logo_img, bg=T["TOPBAR"])
+            logo_lbl.pack(side="left", padx=(18, 0))
+        except Exception as e:
+            print(f"Logo error: {e}")
+
+        title_lbl = tk.Label(topbar, text="TESDA ID Generator",
                              bg=T["TOPBAR"], fg=T["TEXT"],
-                             font=("Helvetica Neue", 14, "bold"), padx=18)
+                             font=("Segoe UI", 16, "bold"), padx=12)
         title_lbl.pack(side="left", pady=10)
         self._reg(title_lbl, "text_topbar")
 
-        sub_lbl = tk.Label(topbar, text="Word template placeholder replacer",
+        sub_lbl = tk.Label(topbar, text="Batch replacement for .docx templates",
                            bg=T["TOPBAR"], fg=T["MUTED"], font=FONT_BODY)
         sub_lbl.pack(side="left")
         self._reg(sub_lbl, "muted_topbar")
@@ -275,10 +289,10 @@ class IDGeneratorApp:
             topbar, text=T["toggle_icon"], command=self.toggle_theme,
             bg=T["TOPBAR"], fg=T["MUTED"],
             activebackground=T["TOPBAR"], activeforeground=ACCENT,
-            font=FONT_BODY, padx=14, pady=6,
+            font=FONT_BODY, padx=16, pady=8,
             relief="flat", bd=0, cursor="hand2",
         )
-        self.toggle_btn.pack(side="right", padx=12)
+        self.toggle_btn.pack(side="right", padx=20)
 
         sep = tk.Frame(self.root, bg=T["BORDER"], height=1)
         self._reg(sep, "border")
@@ -316,11 +330,11 @@ class IDGeneratorApp:
 
         body = tk.Frame(_body_frame, bg=T["BG"])
         self._reg(body, "bg")
-        body.pack(fill="both", expand=True, padx=24, pady=20)
+        body.pack(fill="both", expand=True, padx=32, pady=28)
 
         # Card 01: Template
         c1_out, c1_in = self._card(body, "01  TEMPLATE")
-        c1_out.pack(fill="x", pady=(0, 14))
+        c1_out.pack(fill="x", pady=(0, 20))
 
         row = tk.Frame(c1_in, bg=T["PANEL"])
         self._reg(row, "panel")
@@ -331,20 +345,20 @@ class IDGeneratorApp:
 
         self.file_label = tk.Label(row, text="No file selected",
                                    bg=T["PANEL"], fg=T["MUTED"],
-                                   font=FONT_MONO_S, padx=14)
+                                   font=FONT_MONO_S, padx=16)
         self._reg(self.file_label, "muted")
         self.file_label.pack(side="left")
 
         ph_lbl = tk.Label(row, text="Name placeholder:", bg=T["PANEL"], fg=T["MUTED"], font=FONT_BODY)
         self._reg(ph_lbl, "muted")
-        ph_lbl.pack(side="right", padx=(0, 6))
-        ph_entry = self._make_entry(row, textvariable=self.name_placeholder_var, width=20)
+        ph_lbl.pack(side="right", padx=(0, 8))
+        ph_entry = self._make_entry(row, textvariable=self.name_placeholder_var, width=22)
         ph_entry.pack(side="right")
 
-        # Card 01b: Course selector
+        # Card 02: Course selector
         COURSES = ['Agroentrepreneurship NC II', 'Agroentrepreneurship NC III', 'Barangay Health Services NC II', 'Bookkeeping NC III', "Community-Based Trainer's Methodology Course", 'Dressmaking NC II', 'Driving NC II', 'Early Childhood Care and Development Services NC III', 'Electrical Installation and Maintenance NC II', 'Electrical Installation and Maintenance NC III', 'Housekeeping NC II', 'Organic Agriculture Production NC II', 'PV Systems Installation NC II', 'Shielded Metal Arc Welding NC I', 'Shielded Metal Arc Welding NC II', "Trainer's Methodology Level I"]
         cc_out, cc_in = self._card(body, "02  COURSE")
-        cc_out.pack(fill="x", pady=(0, 14))
+        cc_out.pack(fill="x", pady=(0, 20))
 
         course_row = tk.Frame(cc_in, bg=T["PANEL"])
         self._reg(course_row, "panel")
@@ -352,14 +366,14 @@ class IDGeneratorApp:
 
         c_lbl = tk.Label(course_row, text="Select course:", bg=T["PANEL"], fg=T["MUTED"], font=FONT_BODY)
         self._reg(c_lbl, "muted")
-        c_lbl.pack(side="left", padx=(0, 10))
+        c_lbl.pack(side="left", padx=(0, 12))
 
         self.course_dropdown = self._make_dropdown(course_row, self.course_var, COURSES)
         self.course_dropdown.pack(side="left", fill="x", expand=True)
 
-        # Card 03: Detected (no card number change needed)
-        c2_out, c2_in = self._card(body, "02  DETECTED PLACEHOLDERS")
-        c2_out.pack(fill="x", pady=(0, 14))
+        # Card 03: Detected
+        c2_out, c2_in = self._card(body, "03  DETECTED PLACEHOLDERS")
+        c2_out.pack(fill="x", pady=(0, 20))
 
         self.detected_names_text = self._make_scrolled(c2_in, height=5)
         self.detected_names_text.config(state="disabled")
@@ -367,23 +381,23 @@ class IDGeneratorApp:
 
         btn_row = tk.Frame(c2_in, bg=T["PANEL"])
         self._reg(btn_row, "panel")
-        btn_row.pack(fill="x", pady=(10, 0))
+        btn_row.pack(fill="x", pady=(14, 0))
 
         self.extract_btn = self._styled_button(btn_row, "⟳  Auto-detect Placeholders",
                                                self.autofill_names_from_docx, ACCENT2)
         self.extract_btn.pack(side="left")
 
         self.csv_btn = self._styled_button(btn_row, "⊕  Upload CSV", self.upload_csv, TEAL)
-        self.csv_btn.pack(side="left", padx=(10, 0))
+        self.csv_btn.pack(side="left", padx=(12, 0))
 
         # Card 04: Person data
         c3_out, c3_in = self._card(body, "04  PERSON DATA  —  one entry per line")
-        c3_out.pack(fill="both", expand=True, pady=(0, 14))
+        c3_out.pack(fill="both", expand=True, pady=(0, 20))
 
         # Row A
         row_a = tk.Frame(c3_in, bg=T["PANEL"])
         self._reg(row_a, "panel")
-        row_a.pack(fill="both", expand=True, pady=(0, 8))
+        row_a.pack(fill="both", expand=True, pady=(0, 12))
 
         for title, default, attr in [
             ("Name",        "NAME HERE",         "name_text"),
@@ -393,8 +407,8 @@ class IDGeneratorApp:
         ]:
             col = tk.Frame(row_a, bg=T["PANEL"])
             self._reg(col, "panel")
-            col.pack(side="left", fill="both", expand=True, padx=(0, 8))
-            self._col_label(col, title).pack(anchor="w", pady=(0, 4))
+            col.pack(side="left", fill="both", expand=True, padx=(0, 10))
+            self._col_label(col, title).pack(anchor="w", pady=(0, 6))
             box = self._make_scrolled(col, height=7, width=14)
             box.insert(tk.END, default)
             box.pack(fill="both", expand=True)
@@ -402,7 +416,7 @@ class IDGeneratorApp:
 
         div = tk.Frame(c3_in, bg=T["BORDER"], height=1)
         self._reg(div, "border")
-        div.pack(fill="x", pady=(0, 8))
+        div.pack(fill="x", pady=(0, 12))
 
         # Row B
         row_b = tk.Frame(c3_in, bg=T["PANEL"])
@@ -416,8 +430,8 @@ class IDGeneratorApp:
         ]:
             col = tk.Frame(row_b, bg=T["PANEL"])
             self._reg(col, "panel")
-            col.pack(side="left", fill="both", expand=True, padx=(0, 8))
-            self._col_label(col, title).pack(anchor="w", pady=(0, 4))
+            col.pack(side="left", fill="both", expand=True, padx=(0, 10))
+            self._col_label(col, title).pack(anchor="w", pady=(0, 6))
             box = self._make_scrolled(col, height=7, width=14)
             box.insert(tk.END, default)
             box.pack(fill="both", expand=True)
@@ -426,7 +440,7 @@ class IDGeneratorApp:
         hint = tk.Label(c3_in, text="ℹ  IDs are auto-generated (+1) starting from  2026-000",
                         bg=T["PANEL"], fg=T["HINT_FG"], font=FONT_BODY, anchor="w")
         self._reg(hint, "hint")
-        hint.pack(fill="x", pady=(10, 0))
+        hint.pack(fill="x", pady=(14, 0))
 
         # Card 05: Generate
         c4_out, c4_in = self._card(body, "05  GENERATE")
@@ -434,13 +448,13 @@ class IDGeneratorApp:
 
         self.generate_btn = self._styled_button(c4_in, "⚡  Generate Updated File",
                                                 self.process_files, DANGER)
-        self.generate_btn.config(font=("Helvetica Neue", 12, "bold"), pady=11)
+        self.generate_btn.config(font=("Segoe UI", 12, "bold"), pady=14)
         self.generate_btn.pack(fill="x")
 
         self.status_label = tk.Label(c4_in, text="",
                                      bg=T["PANEL"], fg=T["MUTED"], font=FONT_BODY)
         self._reg(self.status_label, "status")
-        self.status_label.pack(pady=(10, 2))
+        self.status_label.pack(pady=(12, 2))
 
     # ── All logic methods below are UNCHANGED ─────────────────────────────────
 
