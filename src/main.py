@@ -74,6 +74,7 @@ class IDGeneratorApp:
         self.root.title("ID Generator")
         self.root.geometry("1200x840")
         self.root.minsize(900, 600)
+        self.root.state('zoomed')
         self.root.resizable(True, True)
 
         self._theme_name = "light"
