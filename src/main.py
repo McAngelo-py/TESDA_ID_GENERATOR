@@ -87,6 +87,7 @@ class IDGeneratorApp:
         self.course_var = tk.StringVar(value="COURSE HERE")
         self.detected_name_placeholder_count = 0
         self.detected_id_placeholder_count = 0
+        self.detected_code_placeholder_count = 0
         self.detected_address_placeholder_count = 0
         self.detected_blood_placeholder_count = 0
         self.detected_sex_placeholder_count = 0
@@ -402,6 +403,7 @@ class IDGeneratorApp:
 
         for title, default, attr in [
             ("Name",        "NAME HERE",         "name_text"),
+            ("Code",        "CODE HERE",         "code_text"),
             ("Address",     "HOME ADDRESS HERE",  "address_text"),
             ("Blood Type",  "BLOOD TYPE HERE",    "blood_text"),
             ("Sex",         "SEX HERE",           "sex_text"),
@@ -473,6 +475,7 @@ class IDGeneratorApp:
                 with open(file_path, mode='r', encoding='utf-8') as f:
                     reader = csv.reader(f)
                     names = []
+                    codes = []
                     addresses = []
                     bloods = []
                     sexes = []
@@ -483,8 +486,29 @@ class IDGeneratorApp:
                     for row in reader:
                         if not row:
                             continue
-                        if len(row) >= 8:
+                        if len(row) >= 9:
                             name = row[0].strip()
+                            code = row[1].strip()
+                            address = row[2].strip()
+                            blood = row[3].strip()
+                            sex = row[4].strip()
+                            gender = row[5].strip()
+                            emergency_name = row[6].strip()
+                            emergency_number = row[7].strip()
+                            emergency_address = row[8].strip()
+                            if name:
+                                names.append(name)
+                                codes.append(code)
+                                addresses.append(address)
+                                bloods.append(blood)
+                                sexes.append(sex)
+                                genders.append(gender)
+                                emergency_names.append(emergency_name)
+                                emergency_numbers.append(emergency_number)
+                                emergency_addresses.append(emergency_address)
+                        elif len(row) >= 8:
+                            name = row[0].strip()
+                            code = ""
                             address = row[1].strip()
                             blood = row[2].strip()
                             sex = row[3].strip()
@@ -494,6 +518,7 @@ class IDGeneratorApp:
                             emergency_address = row[7].strip()
                             if name:
                                 names.append(name)
+                                codes.append(code)
                                 addresses.append(address)
                                 bloods.append(blood)
                                 sexes.append(sex)
@@ -503,11 +528,13 @@ class IDGeneratorApp:
                                 emergency_addresses.append(emergency_address)
                         elif len(row) >= 4:
                             name = row[0].strip()
+                            code = ""
                             address = row[1].strip()
                             blood = row[2].strip()
                             sex = row[3].strip()
                             if name:
                                 names.append(name)
+                                codes.append(code)
                                 addresses.append(address)
                                 bloods.append(blood)
                                 sexes.append(sex)
@@ -517,6 +544,7 @@ class IDGeneratorApp:
                                 emergency_addresses.append("")
                         elif len(row) >= 1 and row[0].strip():
                             names.append(row[0].strip())
+                            codes.append("")
                             addresses.append("")
                             bloods.append("")
                             sexes.append("")
@@ -526,6 +554,7 @@ class IDGeneratorApp:
                             emergency_addresses.append("")
                     if names:
                         self.name_text.delete("1.0", tk.END)
+                        self.code_text.delete("1.0", tk.END)
                         self.address_text.delete("1.0", tk.END)
                         self.blood_text.delete("1.0", tk.END)
                         self.sex_text.delete("1.0", tk.END)
@@ -534,6 +563,7 @@ class IDGeneratorApp:
                         self.emergency_number_text.delete("1.0", tk.END)
                         self.emergency_address_text.delete("1.0", tk.END)
                         self.name_text.insert(tk.END, "\n".join(names))
+                        self.code_text.insert(tk.END, "\n".join(codes))
                         self.address_text.insert(tk.END, "\n".join(addresses))
                         self.blood_text.insert(tk.END, "\n".join(bloods))
                         self.sex_text.insert(tk.END, "\n".join(sexes))
@@ -549,6 +579,7 @@ class IDGeneratorApp:
         if self.detected_name_placeholder_count <= 0:
             raise ValueError("Click 'Auto-detect Placeholders' first to detect name placeholders.")
         name_lines = [line.strip() for line in self.name_text.get("1.0", tk.END).split("\n")]
+        code_lines = [line.strip() for line in self.code_text.get("1.0", tk.END).split("\n")]
         address_lines = [line.strip() for line in self.address_text.get("1.0", tk.END).split("\n")]
         blood_lines = [line.strip() for line in self.blood_text.get("1.0", tk.END).split("\n")]
         sex_lines = [line.strip() for line in self.sex_text.get("1.0", tk.END).split("\n")]
@@ -559,6 +590,7 @@ class IDGeneratorApp:
         clean_names = [line for line in name_lines if line and line.upper() != "NAME HERE"]
         if not clean_names:
             raise ValueError("Please input names (one per line).")
+        clean_codes = [line for line in code_lines if line.upper() != "CODE HERE"]
         clean_addresses = [line for line in address_lines if line.upper() != "HOME ADDRESS HERE"]
         clean_bloods = [line for line in blood_lines if line.upper() != "BLOOD TYPE HERE"]
         clean_sexes = [line for line in sex_lines if line.upper() != "SEX HERE"]
@@ -574,6 +606,7 @@ class IDGeneratorApp:
                 f"{expected_people} person entry(ies) expected from {self.detected_name_placeholder_count} '{placeholder}' placeholders."
             )
         expanded_names = []
+        expanded_codes = []
         expanded_addresses = []
         expanded_blood_types = []
         expanded_sexes = []
@@ -582,6 +615,7 @@ class IDGeneratorApp:
         expanded_emergency_numbers = []
         expanded_emergency_addresses = []
         for idx, name in enumerate(clean_names):
+            code = clean_codes[idx] if idx < len(clean_codes) else ""
             address = clean_addresses[idx] if idx < len(clean_addresses) else ""
             blood = clean_bloods[idx] if idx < len(clean_bloods) else ""
             sex = clean_sexes[idx] if idx < len(clean_sexes) else ""
@@ -591,6 +625,7 @@ class IDGeneratorApp:
             emergency_address = clean_emergency_addresses[idx] if idx < len(clean_emergency_addresses) else ""
             for _ in range(self.repeat_factor):
                 expanded_names.append(name)
+                expanded_codes.append(code)
                 expanded_addresses.append(address)
                 expanded_blood_types.append(blood)
                 expanded_sexes.append(sex)
@@ -600,7 +635,7 @@ class IDGeneratorApp:
                 expanded_emergency_addresses.append(emergency_address)
         skipped = expected_people - len(clean_names)
         return (
-            expanded_names, expanded_addresses, expanded_blood_types,
+            expanded_names, expanded_codes, expanded_addresses, expanded_blood_types,
             expanded_sexes, expanded_genders, expanded_emergency_names,
             expanded_emergency_numbers, expanded_emergency_addresses,
             skipped, len(clean_names), expected_people,
@@ -626,6 +661,7 @@ class IDGeneratorApp:
             name_placeholder = self.name_placeholder_var.get().strip() or "NAME HERE"
             name_placeholder_count = self.count_placeholders_in_docx(template, name_placeholder)
             id_placeholder_count = self.count_placeholders_in_docx(template, "2026-000")
+            code_placeholder_count = self.count_placeholders_in_docx(template, "CODE HERE")
             address_placeholder_count = self.count_placeholders_in_docx(template, "HOME ADDRESS HERE") + self.count_placeholders_in_docx(template, "HOME ADRESS HERE")
             blood_placeholder_count = self.count_placeholders_in_docx(template, "BLOOD TYPE HERE")
             sex_placeholder_count = self.count_placeholders_in_docx(template, "SEX HERE")
@@ -639,6 +675,7 @@ class IDGeneratorApp:
                 return
             self.detected_name_placeholder_count = name_placeholder_count
             self.detected_id_placeholder_count = id_placeholder_count
+            self.detected_code_placeholder_count = code_placeholder_count
             self.detected_address_placeholder_count = address_placeholder_count
             self.detected_blood_placeholder_count = blood_placeholder_count
             self.detected_sex_placeholder_count = sex_placeholder_count
@@ -655,6 +692,7 @@ class IDGeneratorApp:
                 tk.END,
                 f"{name_placeholder} x {name_placeholder_count}\n"
                 f"2026-000 x {id_placeholder_count}\n"
+                f"CODE HERE x {code_placeholder_count}\n"
                 f"HOME ADDRESS HERE x {address_placeholder_count}\n"
                 f"BLOOD TYPE HERE x {blood_placeholder_count}\n"
                 f"SEX HERE x {sex_placeholder_count}\n"
@@ -667,6 +705,7 @@ class IDGeneratorApp:
             )
             self.detected_names_text.config(state="disabled")
             self.name_text.delete("1.0", tk.END)
+            self.code_text.delete("1.0", tk.END)
             self.address_text.delete("1.0", tk.END)
             self.blood_text.delete("1.0", tk.END)
             self.sex_text.delete("1.0", tk.END)
@@ -675,6 +714,7 @@ class IDGeneratorApp:
             self.emergency_number_text.delete("1.0", tk.END)
             self.emergency_address_text.delete("1.0", tk.END)
             self.name_text.insert(tk.END, "\n".join([name_placeholder for _ in range(expected_people)]))
+            self.code_text.insert(tk.END, "\n".join(["CODE HERE" for _ in range(expected_people)]))
             self.address_text.insert(tk.END, "\n".join(["HOME ADDRESS HERE" for _ in range(expected_people)]))
             self.blood_text.insert(tk.END, "\n".join(["BLOOD TYPE HERE" for _ in range(expected_people)]))
             self.sex_text.insert(tk.END, "\n".join(["SEX HERE" for _ in range(expected_people)]))
@@ -729,15 +769,15 @@ class IDGeneratorApp:
 
     def replace_placeholders_in_docx_xml(
         self, source_path, output_path,
-        replacement_names, replacement_ids, replacement_addresses,
-        replacement_blood_types, replacement_sexes, replacement_genders,
-        replacement_emergency_names, replacement_emergency_numbers,
-        replacement_emergency_addresses, name_placeholder,
-        replacement_courses=None,
+        replacement_names, replacement_ids, replacement_codes,
+        replacement_addresses, replacement_blood_types, replacement_sexes,
+        replacement_genders, replacement_emergency_names,
+        replacement_emergency_numbers, replacement_emergency_addresses,
+        name_placeholder, replacement_courses=None,
     ):
         w_ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
         text_tag = f"{{{w_ns}}}t"
-        name_idx = id_idx = address_idx = blood_idx = 0
+        name_idx = id_idx = code_idx = address_idx = blood_idx = 0
         sex_idx = gender_idx = emergency_name_idx = 0
         emergency_number_idx = emergency_address_idx = course_idx = 0
         if replacement_courses is None:
@@ -767,6 +807,8 @@ class IDGeneratorApp:
                                         name_idx += 1; changed = True; i += len(name_placeholder_words); continue
                                 if normalized == "2026-000" and id_idx < len(replacement_ids):
                                     text_nodes[i].text = replacement_ids[id_idx]; id_idx += 1; changed = True
+                                elif normalized == "CODE HERE" and code_idx < len(replacement_codes):
+                                    text_nodes[i].text = replacement_codes[code_idx]; code_idx += 1; changed = True
                                 elif normalized in ("HOME ADDRESS HERE", "HOME ADRESS HERE") and address_idx < len(replacement_addresses):
                                     text_nodes[i].text = replacement_addresses[address_idx]; address_idx += 1; changed = True
                                 elif normalized == "BLOOD TYPE HERE" and blood_idx < len(replacement_blood_types):
@@ -789,7 +831,7 @@ class IDGeneratorApp:
                         except Exception:
                             pass
                     out_zip.writestr(item, data)
-        return (name_idx, id_idx, address_idx, blood_idx, sex_idx, gender_idx,
+        return (name_idx, id_idx, code_idx, address_idx, blood_idx, sex_idx, gender_idx,
                 emergency_name_idx, emergency_number_idx, emergency_address_idx, course_idx)
 
     def process_files(self):
@@ -798,7 +840,7 @@ class IDGeneratorApp:
             messagebox.showerror("Error", "Please select a .docx template file.")
             return
         try:
-            (replacement_names, replacement_addresses, replacement_blood_types,
+            (replacement_names, replacement_codes, replacement_addresses, replacement_blood_types,
              replacement_sexes, replacement_genders, replacement_emergency_names,
              replacement_emergency_numbers, replacement_emergency_addresses,
              skipped, replaced_count, total_old) = self.parse_replacement_rows()
@@ -822,11 +864,11 @@ class IDGeneratorApp:
         try:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             output_path = os.path.join(os.path.dirname(template), f"UPDATED_IDS_{timestamp}.docx")
-            (actual_name_replaced, actual_id_replaced, actual_address_replaced,
+            (actual_name_replaced, actual_id_replaced, actual_code_replaced, actual_address_replaced,
              actual_blood_replaced, actual_sex_replaced, actual_gender_replaced,
              actual_emergency_name_replaced, actual_emergency_number_replaced,
              actual_emergency_address_replaced, actual_course_replaced) = self.replace_placeholders_in_docx_xml(
-                template, output_path, replacement_names, replacement_ids,
+                template, output_path, replacement_names, replacement_ids, replacement_codes,
                 replacement_addresses, replacement_blood_types, replacement_sexes,
                 replacement_genders, replacement_emergency_names,
                 replacement_emergency_numbers, replacement_emergency_addresses,
@@ -843,6 +885,7 @@ class IDGeneratorApp:
                 if id_skipped:
                     id_details += f"\nSkipped {id_skipped} trailing ID(s) with no replacement input."
             other_details = (
+                f"\nCode placeholders replaced: {actual_code_replaced} of {self.detected_code_placeholder_count}"
                 f"\nAddress placeholders replaced: {actual_address_replaced} of {self.detected_address_placeholder_count}"
                 f"\nBlood placeholders replaced: {actual_blood_replaced} of {self.detected_blood_placeholder_count}"
                 f"\nSex placeholders replaced: {actual_sex_replaced} of {self.detected_sex_placeholder_count}"
