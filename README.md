@@ -39,7 +39,7 @@ Your Word document (`.docx`) must contain specific placeholder text that the app
 | Data Field | Placeholder in Word |
 | :--- | :--- |
 | **Name** | `NAME HERE` (or custom via UI) |
-| **ID Number** | `2026-000` (auto-increments) |
+| **ID Number** | `2026-000` |
 | **Course** | `COURSE HERE` (selected via dropdown) |
 | **Student Code** | `CODE HERE` |
 | **Address** | `HOME ADDRESS HERE` |
