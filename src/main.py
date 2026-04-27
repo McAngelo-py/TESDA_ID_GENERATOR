@@ -12,17 +12,18 @@ import xml.etree.ElementTree as ET
 # ── Theme definitions ─────────────────────────────────────────────────────────
 THEMES = {
     "light": {
-        "BG":          "#f8fafc",
+        "BG":          "#f1f5f9",  # Slate 100
         "PANEL":       "#ffffff",
-        "BORDER":      "#e2e8f0",
-        "ENTRY_BG":    "#ffffff",
-        "ENTRY_FG":    "#1e293b",
-        "TEXT":        "#0f172a",
-        "MUTED":       "#64748b",
+        "BORDER":      "#cbd5e1",  # Slate 300
+        "ENTRY_BG":    "#f8fafc",  # Slate 50
+        "ENTRY_FG":    "#0f172a",  # Slate 900
+        "TEXT":        "#1e293b",  # Slate 800
+        "MUTED":       "#475569",  # Slate 600
         "TOPBAR":      "#ffffff",
-        "CARD_TITLE":  "#475569",
-        "HINT_FG":     "#94a3b8",
+        "CARD_TITLE":  "#0f172a",  # Slate 900
+        "HINT_FG":     "#64748b",  # Slate 500
         "toggle_icon": "🌙  Dark Mode",
+        "SHADOW":      "#e2e8f0",  # Slate 200
     },
     "dark": {
         "BG":          "#0f172a",
@@ -36,17 +37,18 @@ THEMES = {
         "CARD_TITLE":  "#cbd5e1",
         "HINT_FG":     "#475569",
         "toggle_icon": "☀  Light Mode",
+        "SHADOW":      "#0f172a",
     },
 }
 
-ACCENT  = "#3b82f6"  # Modern Blue
-ACCENT2 = "#8b5cf6"  # Modern Violet
-TEAL    = "#14b8a6"  # Modern Teal
-SUCCESS = "#10b981"  # Modern Emerald
-DANGER  = "#ef4444"  # Modern Red
-WARNING = "#f59e0b"  # Modern Amber
+ACCENT  = "#2563eb"  # Modern Blue (600)
+ACCENT2 = "#7c3aed"  # Modern Violet (600)
+TEAL    = "#0d9488"  # Modern Teal (600)
+SUCCESS = "#059669"  # Modern Emerald (600)
+DANGER  = "#dc2626"  # Modern Red (600)
+WARNING = "#d97706"  # Modern Amber (600)
 
-FONT_SUB    = ("Segoe UI", 10, "bold")
+FONT_SUB    = ("Segoe UI Semibold", 10)
 FONT_BODY   = ("Segoe UI", 10)
 FONT_MONO   = ("Consolas", 10)
 FONT_MONO_S = ("Consolas", 9)
@@ -124,6 +126,8 @@ class IDGeneratorApp:
                     widget.configure(bg=T["PANEL"])
                 elif role == "border":
                     widget.configure(bg=T["BORDER"])
+                elif role == "shadow":
+                    widget.configure(bg=T["SHADOW"])
                 elif role == "topbar":
                     widget.configure(bg=T["TOPBAR"])
                 elif role == "text_topbar":
@@ -155,6 +159,8 @@ class IDGeneratorApp:
         for btn, color in self._themed_buttons:
             try:
                 btn.configure(bg=color, activebackground=color)
+                if isinstance(btn, tk.OptionMenu):
+                    btn["menu"].configure(bg=T["PANEL"], fg=T["ENTRY_FG"])
             except tk.TclError:
                 pass
         self.toggle_btn.configure(
@@ -175,7 +181,7 @@ class IDGeneratorApp:
             parent, text=text, command=command,
             bg=color, fg="#ffffff",
             activebackground=_lighten(color), activeforeground="#ffffff",
-            font=FONT_SUB, padx=16, pady=8,
+            font=FONT_SUB, padx=20, pady=10,
             relief="flat", bd=0, cursor="hand2",
         )
         def _on(e):  btn.config(bg=_lighten(color))
@@ -195,6 +201,10 @@ class IDGeneratorApp:
             width=width, highlightthickness=1,
             highlightcolor=ACCENT, highlightbackground=T["BORDER"],
         )
+        def _on_focus(e_): e.config(highlightbackground=ACCENT)
+        def _off_focus(e_): e.config(highlightbackground=self._T["BORDER"])
+        e.bind("<FocusIn>", _on_focus)
+        e.bind("<FocusOut>", _off_focus)
         self._reg(e, "entry")
         return e
 
@@ -203,16 +213,17 @@ class IDGeneratorApp:
         om = tk.OptionMenu(parent, variable, *choices)
         om.config(
             bg=T["ENTRY_BG"], fg=T["ENTRY_FG"],
-            activebackground=T["PANEL"], activeforeground=T["TEXT"],
+            activebackground=T["BG"], activeforeground=T["TEXT"],
             highlightthickness=1, highlightbackground=T["BORDER"],
             relief="flat", bd=0, font=FONT_MONO, cursor="hand2",
             indicatoron=True,
-            padx=10, pady=4
+            padx=12, pady=6
         )
         om["menu"].config(
-            bg=T["ENTRY_BG"], fg=T["ENTRY_FG"],
-            activebackground=ACCENT, activeforeground="#fff",
+            bg=T["PANEL"], fg=T["ENTRY_FG"],
+            activebackground=ACCENT, activeforeground="#ffffff",
             font=FONT_MONO, relief="flat", bd=0,
+            tearoff=0
         )
         self._themed_buttons.append((om, T["ENTRY_BG"]))
         return om
@@ -226,25 +237,41 @@ class IDGeneratorApp:
             relief="flat", bd=0,
             highlightthickness=1, highlightcolor=ACCENT,
             highlightbackground=T["BORDER"],
-            selectbackground=ACCENT, selectforeground="#fff",
+            selectbackground=ACCENT, selectforeground="#ffffff",
             padx=10, pady=10
         )
+        def _on_focus(e_): box.config(highlightbackground=ACCENT)
+        def _off_focus(e_): box.config(highlightbackground=self._T["BORDER"])
+        box.bind("<FocusIn>", _on_focus)
+        box.bind("<FocusOut>", _off_focus)
         self._reg(box, "scrolled")
         return box
 
     def _card(self, parent, title=""):
         T = self._T
-        outer = tk.Frame(parent, bg=T["BORDER"], bd=0)
+        # shadow container
+        shadow = tk.Frame(parent, bg=T["BG"], bd=0)
+        self._reg(shadow, "bg")
+        
+        # shadow layer (simulated with 1px offset)
+        s_layer = tk.Frame(shadow, bg=T["SHADOW"], bd=0)
+        self._reg(s_layer, "shadow")
+        s_layer.pack(fill="both", expand=True, padx=(1, 0), pady=(1, 0))
+        
+        outer = tk.Frame(s_layer, bg=T["BORDER"], bd=0)
         self._reg(outer, "border")
-        inner = tk.Frame(outer, bg=T["PANEL"], padx=20, pady=18)
+        outer.pack(fill="both", expand=True, padx=(0, 1), pady=(0, 1))
+        
+        inner = tk.Frame(outer, bg=T["PANEL"], padx=24, pady=20)
         self._reg(inner, "panel")
         inner.pack(fill="both", expand=True, padx=1, pady=1)
+        
         if title:
             lbl = tk.Label(inner, text=title, bg=T["PANEL"], fg=T["CARD_TITLE"],
                            font=FONT_LABEL, anchor="w")
-            lbl.pack(fill="x", pady=(0, 14))
+            lbl.pack(fill="x", pady=(0, 16))
             self._reg(lbl, "card_title")
-        return outer, inner
+        return shadow, inner
 
     def _col_label(self, parent, text):
         T = self._T
@@ -278,13 +305,13 @@ class IDGeneratorApp:
 
         title_lbl = tk.Label(topbar, text="TESDA ID Generator",
                              bg=T["TOPBAR"], fg=T["TEXT"],
-                             font=("Segoe UI", 16, "bold"), padx=12)
+                             font=("Segoe UI Semibold", 18), padx=12)
         title_lbl.pack(side="left", pady=10)
         self._reg(title_lbl, "text_topbar")
 
-        sub_lbl = tk.Label(topbar, text="Batch replacement for .docx templates",
+        sub_lbl = tk.Label(topbar, text="—  Batch Replacement Utility",
                            bg=T["TOPBAR"], fg=T["MUTED"], font=FONT_BODY)
-        sub_lbl.pack(side="left")
+        sub_lbl.pack(side="left", padx=(0, 20))
         self._reg(sub_lbl, "muted_topbar")
 
         self.toggle_btn = tk.Button(
@@ -332,11 +359,11 @@ class IDGeneratorApp:
 
         body = tk.Frame(_body_frame, bg=T["BG"])
         self._reg(body, "bg")
-        body.pack(fill="both", expand=True, padx=32, pady=28)
+        body.pack(fill="both", expand=True, padx=40, pady=32)
 
         # Card 01: Template
-        c1_out, c1_in = self._card(body, "01  TEMPLATE")
-        c1_out.pack(fill="x", pady=(0, 20))
+        c1_out, c1_in = self._card(body, "01  TEMPLATE SELECTION")
+        c1_out.pack(fill="x", pady=(0, 24))
 
         row = tk.Frame(c1_in, bg=T["PANEL"])
         self._reg(row, "panel")
@@ -359,8 +386,8 @@ class IDGeneratorApp:
 
         # Card 02: Course selector
         COURSES = ['Agroentrepreneurship NC II', 'Agroentrepreneurship NC III', 'Barangay Health Services NC II', 'Bookkeeping NC III', "Community-Based Trainer's Methodology Course", 'Dressmaking NC II', 'Driving NC II', 'Early Childhood Care and Development Services NC III', 'Electrical Installation and Maintenance NC II', 'Electrical Installation and Maintenance NC III', 'Housekeeping NC II', 'Organic Agriculture Production NC II', 'PV Systems Installation NC II', 'Shielded Metal Arc Welding NC I', 'Shielded Metal Arc Welding NC II', "Trainer's Methodology Level I"]
-        cc_out, cc_in = self._card(body, "02  COURSE")
-        cc_out.pack(fill="x", pady=(0, 20))
+        cc_out, cc_in = self._card(body, "02  COURSE SELECTION")
+        cc_out.pack(fill="x", pady=(0, 24))
 
         course_row = tk.Frame(cc_in, bg=T["PANEL"])
         self._reg(course_row, "panel")
@@ -375,7 +402,7 @@ class IDGeneratorApp:
 
         # Card 03: Detected
         c2_out, c2_in = self._card(body, "03  DETECTED PLACEHOLDERS")
-        c2_out.pack(fill="x", pady=(0, 20))
+        c2_out.pack(fill="x", pady=(0, 24))
 
         self.detected_names_text = self._make_scrolled(c2_in, height=5)
         self.detected_names_text.config(state="disabled")
@@ -383,7 +410,7 @@ class IDGeneratorApp:
 
         btn_row = tk.Frame(c2_in, bg=T["PANEL"])
         self._reg(btn_row, "panel")
-        btn_row.pack(fill="x", pady=(14, 0))
+        btn_row.pack(fill="x", pady=(18, 0))
 
         self.extract_btn = self._styled_button(btn_row, "⟳  Auto-detect Placeholders",
                                                self.autofill_names_from_docx, ACCENT2)
@@ -393,13 +420,13 @@ class IDGeneratorApp:
         self.csv_btn.pack(side="left", padx=(12, 0))
 
         # Card 04: Person data
-        c3_out, c3_in = self._card(body, "04  PERSON DATA  —  one entry per line")
-        c3_out.pack(fill="both", expand=True, pady=(0, 20))
+        c3_out, c3_in = self._card(body, "04  PERSON DATA  —  One entry per line")
+        c3_out.pack(fill="both", expand=True, pady=(0, 24))
 
         # Row A
         row_a = tk.Frame(c3_in, bg=T["PANEL"])
         self._reg(row_a, "panel")
-        row_a.pack(fill="both", expand=True, pady=(0, 12))
+        row_a.pack(fill="both", expand=True, pady=(0, 16))
 
         for title, default, attr in [
             ("Name",        "NAME HERE",         "name_text"),
@@ -410,16 +437,16 @@ class IDGeneratorApp:
         ]:
             col = tk.Frame(row_a, bg=T["PANEL"])
             self._reg(col, "panel")
-            col.pack(side="left", fill="both", expand=True, padx=(0, 10))
-            self._col_label(col, title).pack(anchor="w", pady=(0, 6))
-            box = self._make_scrolled(col, height=7, width=14)
+            col.pack(side="left", fill="both", expand=True, padx=(0, 12))
+            self._col_label(col, title).pack(anchor="w", pady=(0, 8))
+            box = self._make_scrolled(col, height=8, width=14)
             box.insert(tk.END, default)
             box.pack(fill="both", expand=True)
             setattr(self, attr, box)
 
         div = tk.Frame(c3_in, bg=T["BORDER"], height=1)
         self._reg(div, "border")
-        div.pack(fill="x", pady=(0, 12))
+        div.pack(fill="x", pady=(0, 16))
 
         # Row B
         row_b = tk.Frame(c3_in, bg=T["PANEL"])
@@ -433,31 +460,31 @@ class IDGeneratorApp:
         ]:
             col = tk.Frame(row_b, bg=T["PANEL"])
             self._reg(col, "panel")
-            col.pack(side="left", fill="both", expand=True, padx=(0, 10))
-            self._col_label(col, title).pack(anchor="w", pady=(0, 6))
-            box = self._make_scrolled(col, height=7, width=14)
+            col.pack(side="left", fill="both", expand=True, padx=(0, 12))
+            self._col_label(col, title).pack(anchor="w", pady=(0, 8))
+            box = self._make_scrolled(col, height=8, width=14)
             box.insert(tk.END, default)
             box.pack(fill="both", expand=True)
             setattr(self, attr, box)
 
-        hint = tk.Label(c3_in, text="ℹ  IDs are auto-generated (+1) starting from  2026-000",
+        hint = tk.Label(c3_in, text="ℹ  IDs are auto-generated starting from 2026-000. Ensure one entry per line.",
                         bg=T["PANEL"], fg=T["HINT_FG"], font=FONT_BODY, anchor="w")
         self._reg(hint, "hint")
-        hint.pack(fill="x", pady=(14, 0))
+        hint.pack(fill="x", pady=(18, 0))
 
         # Card 05: Generate
-        c4_out, c4_in = self._card(body, "05  GENERATE")
+        c4_out, c4_in = self._card(body, "05  FINALIZATION")
         c4_out.pack(fill="x")
 
-        self.generate_btn = self._styled_button(c4_in, "⚡  Generate Updated File",
+        self.generate_btn = self._styled_button(c4_in, "⚡  Generate Updated ID Documents",
                                                 self.process_files, DANGER)
-        self.generate_btn.config(font=("Segoe UI", 12, "bold"), pady=14)
+        self.generate_btn.config(font=("Segoe UI Semibold", 14), pady=18)
         self.generate_btn.pack(fill="x")
 
         self.status_label = tk.Label(c4_in, text="",
                                      bg=T["PANEL"], fg=T["MUTED"], font=FONT_BODY)
         self._reg(self.status_label, "status")
-        self.status_label.pack(pady=(12, 2))
+        self.status_label.pack(pady=(14, 2))
 
     # ── All logic methods below are UNCHANGED ─────────────────────────────────
 
