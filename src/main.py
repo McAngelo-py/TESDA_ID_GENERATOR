@@ -824,11 +824,11 @@ class IDGeneratorApp:
                             while i < len(text_nodes):
                                 normalized = " ".join(text_nodes[i].text.split()).upper()
                                 if normalized == name_placeholder_upper and name_idx < len(replacement_names):
-                                    text_nodes[i].text = replacement_names[name_idx]
+                                    text_nodes[i].text = replacement_names[name_idx].upper()
                                     name_idx += 1; changed = True; i += 1; continue
                                 if len(name_placeholder_words) > 1 and i + len(name_placeholder_words) - 1 < len(text_nodes) and name_idx < len(replacement_names):
                                     if all(" ".join(text_nodes[i + j].text.split()).upper() == name_placeholder_words[j] for j in range(len(name_placeholder_words))):
-                                        text_nodes[i].text = replacement_names[name_idx]
+                                        text_nodes[i].text = replacement_names[name_idx].upper()
                                         for j in range(1, len(name_placeholder_words)):
                                             text_nodes[i + j].text = ""
                                         name_idx += 1; changed = True; i += len(name_placeholder_words); continue
