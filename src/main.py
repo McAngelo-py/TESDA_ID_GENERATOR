@@ -861,6 +861,135 @@ class IDGeneratorApp:
         return (name_idx, id_idx, code_idx, address_idx, blood_idx, sex_idx, gender_idx,
                 emergency_name_idx, emergency_number_idx, emergency_address_idx, course_idx)
 
+    def show_verification_dialog(self, data, ids, course):
+        T = self._T
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Verify Data Before Generation")
+        dialog.geometry("1000x700")
+        dialog.minsize(800, 500)
+        dialog.configure(bg=T["BG"])
+        dialog.transient(self.root)
+        dialog.grab_set()
+        result = {"confirmed": False}
+
+        dialog_frame = tk.Frame(dialog, bg=T["BG"], padx=20, pady=20)
+        dialog_frame.pack(fill="both", expand=True)
+
+        header = tk.Frame(dialog_frame, bg=T["BG"])
+        header.pack(fill="x", pady=(0, 15))
+        
+        title = tk.Label(
+            header, 
+            text="📋 Verify Data Before Generating", 
+            font=("Segoe UI", 16, "bold"),
+            bg=T["BG"],
+            fg=T["TEXT"]
+        )
+        title.pack(side="left")
+        
+        subtitle = tk.Label(
+            header,
+            text=f"Course: {course} | Total Persons: {len(data)}",
+            font=FONT_BODY,
+            bg=T["BG"],
+            fg=T["MUTED"]
+        )
+        subtitle.pack(side="right")
+
+        notebook_frame = tk.Frame(dialog_frame, bg=T["BG"])
+        notebook_frame.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(notebook_frame, bg=T["BG"], bd=0, highlightthickness=0)
+        v_scroll = tk.Scrollbar(notebook_frame, orient="vertical", command=canvas.yview)
+        h_scroll = tk.Scrollbar(notebook_frame, orient="horizontal", command=canvas.xview)
+        scrollable_frame = tk.Frame(canvas, bg=T["BG"])
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        v_scroll.pack(side="right", fill="y")
+        h_scroll.pack(side="bottom", fill="x")
+
+        for i, person in enumerate(data, 1):
+            card_out, card_in = self._card(scrollable_frame, f"Person {i} — ID: {ids[i-1]}")
+            card_out.pack(fill="x", pady=(0, 12))
+            
+            row1 = tk.Frame(card_in, bg=T["PANEL"])
+            row1.pack(fill="x", pady=(0, 8))
+            
+            for label, value in [
+                ("Name:", person.get("name", "")),
+                ("Code:", person.get("code", "")),
+                ("Sex:", person.get("sex", "")),
+            ]:
+                frame = tk.Frame(row1, bg=T["PANEL"])
+                frame.pack(side="left", fill="x", expand=True, padx=(0, 12))
+                tk.Label(frame, text=label, font=FONT_LABEL, bg=T["PANEL"], fg=T["MUTED"]).pack(anchor="w")
+                tk.Label(frame, text=value or "—", font=FONT_BODY, bg=T["PANEL"], fg=T["TEXT"]).pack(anchor="w")
+            
+            row2 = tk.Frame(card_in, bg=T["PANEL"])
+            row2.pack(fill="x", pady=(0, 8))
+            
+            address_frame = tk.Frame(row2, bg=T["PANEL"])
+            address_frame.pack(side="left", fill="x", expand=True, padx=(0, 12))
+            tk.Label(address_frame, text="Address:", font=FONT_LABEL, bg=T["PANEL"], fg=T["MUTED"]).pack(anchor="w")
+            tk.Label(address_frame, text=person.get("address", "") or "—", font=FONT_BODY, bg=T["PANEL"], fg=T["TEXT"], wraplength=300, justify="left").pack(anchor="w")
+            
+            blood_frame = tk.Frame(row2, bg=T["PANEL"])
+            blood_frame.pack(side="left", fill="x", expand=True)
+            tk.Label(blood_frame, text="Blood Type:", font=FONT_LABEL, bg=T["PANEL"], fg=T["MUTED"]).pack(anchor="w")
+            tk.Label(blood_frame, text=person.get("blood", "") or "—", font=FONT_BODY, bg=T["PANEL"], fg=T["TEXT"]).pack(anchor="w")
+            
+            if person.get("emergency_name") or person.get("emergency_number") or person.get("emergency_address"):
+                div = tk.Frame(card_in, bg=T["BORDER"], height=1)
+                div.pack(fill="x", pady=(10, 10))
+                
+                tk.Label(card_in, text="Emergency Contact", font=FONT_LABEL, bg=T["PANEL"], fg=T["CARD_TITLE"]).pack(anchor="w", pady=(0, 8))
+                
+                e_row1 = tk.Frame(card_in, bg=T["PANEL"])
+                e_row1.pack(fill="x", pady=(0, 8))
+                
+                e_name_frame = tk.Frame(e_row1, bg=T["PANEL"])
+                e_name_frame.pack(side="left", fill="x", expand=True, padx=(0, 12))
+                tk.Label(e_name_frame, text="Name:", font=FONT_LABEL, bg=T["PANEL"], fg=T["MUTED"]).pack(anchor="w")
+                tk.Label(e_name_frame, text=person.get("emergency_name", "") or "—", font=FONT_BODY, bg=T["PANEL"], fg=T["TEXT"]).pack(anchor="w")
+                
+                e_num_frame = tk.Frame(e_row1, bg=T["PANEL"])
+                e_num_frame.pack(side="left", fill="x", expand=True)
+                tk.Label(e_num_frame, text="Number:", font=FONT_LABEL, bg=T["PANEL"], fg=T["MUTED"]).pack(anchor="w")
+                tk.Label(e_num_frame, text=person.get("emergency_number", "") or "—", font=FONT_BODY, bg=T["PANEL"], fg=T["TEXT"]).pack(anchor="w")
+                
+                e_addr_frame = tk.Frame(card_in, bg=T["PANEL"])
+                e_addr_frame.pack(fill="x")
+                tk.Label(e_addr_frame, text="Address:", font=FONT_LABEL, bg=T["PANEL"], fg=T["MUTED"]).pack(anchor="w")
+                tk.Label(e_addr_frame, text=person.get("emergency_address", "") or "—", font=FONT_BODY, bg=T["PANEL"], fg=T["TEXT"], wraplength=400, justify="left").pack(anchor="w")
+
+        button_frame = tk.Frame(dialog_frame, bg=T["BG"])
+        button_frame.pack(fill="x", pady=(15, 0))
+        
+        def cancel():
+            dialog.destroy()
+            result["confirmed"] = False
+        
+        def confirm():
+            dialog.destroy()
+            result["confirmed"] = True
+        
+        cancel_btn = self._styled_button(button_frame, "✕  Cancel", cancel, WARNING)
+        cancel_btn.pack(side="right", padx=(10, 0))
+        
+        confirm_btn = self._styled_button(button_frame, "✓  Confirm & Generate", confirm, SUCCESS)
+        confirm_btn.pack(side="right")
+
+        dialog.wait_window()
+        return result["confirmed"]
+
     def process_files(self):
         template = self.template_path.get()
         if not template:
@@ -886,6 +1015,28 @@ class IDGeneratorApp:
         total_ids = self.detected_id_placeholder_count
         course_value = self.course_var.get()
         replacement_courses = [course_value] * self.detected_course_placeholder_count
+        
+        persons = []
+        unique_idx = 0
+        for i in range(person_count):
+            person = {
+                "name": replacement_names[unique_idx],
+                "code": replacement_codes[unique_idx],
+                "address": replacement_addresses[unique_idx],
+                "blood": replacement_blood_types[unique_idx],
+                "sex": replacement_sexes[unique_idx],
+                "gender": replacement_genders[unique_idx],
+                "emergency_name": replacement_emergency_names[unique_idx],
+                "emergency_number": replacement_emergency_numbers[unique_idx],
+                "emergency_address": replacement_emergency_addresses[unique_idx],
+            }
+            persons.append(person)
+            unique_idx += self.repeat_factor
+        
+        confirmed = self.show_verification_dialog(persons, base_ids, course_value)
+        if not confirmed:
+            return
+        
         self.status_label.config(text="⏳  Processing… please wait.", fg=WARNING)
         self.root.update_idletasks()
         try:
